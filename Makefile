@@ -16,6 +16,7 @@ PATH:=$(BUILDTOOLS_BIN):$(PATH)
 export CGO_ENABLED GOOS GOARCH PATH
 
 FBSD13_RELURL_amd64=https://download.freebsd.org/ftp/releases/VM-IMAGES/13.0-RELEASE/amd64/Latest/FreeBSD-13.0-RELEASE-amd64.qcow2.xz
+HAIKU_RELURL_amd64=https://s3.wasabisys.com/haiku-release/r1beta2/haiku-r1beta2-x86_64-anyboot.zip
 
 # A set of tweakable knobs for our build needs (tweak at your risk!)
 # Which version to assign to snapshot builds (0.0.0 if built locally, 0.0.0-snapshot if on CI/CD)
