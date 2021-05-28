@@ -15,6 +15,8 @@ PATH:=$(BUILDTOOLS_BIN):$(PATH)
 
 export CGO_ENABLED GOOS GOARCH PATH
 
+FBSD13_RELURL_amd64=https://download.freebsd.org/ftp/releases/VM-IMAGES/13.0-RELEASE/amd64/Latest/FreeBSD-13.0-RELEASE-amd64.qcow2.xz
+
 # A set of tweakable knobs for our build needs (tweak at your risk!)
 # Which version to assign to snapshot builds (0.0.0 if built locally, 0.0.0-snapshot if on CI/CD)
 EVE_SNAPSHOT_VERSION=0.0.0
