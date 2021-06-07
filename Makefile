@@ -15,8 +15,10 @@ PATH:=$(BUILDTOOLS_BIN):$(PATH)
 
 export CGO_ENABLED GOOS GOARCH PATH
 
+ 
 FBSD13_RELURL_amd64=https://download.freebsd.org/ftp/releases/VM-IMAGES/13.0-RELEASE/amd64/Latest/FreeBSD-13.0-RELEASE-amd64.qcow2.xz
 HAIKU_RELURL_amd64=https://s3.wasabisys.com/haiku-release/r1beta2/haiku-r1beta2-x86_64-anyboot.zip
+-
 
 # A set of tweakable knobs for our build needs (tweak at your risk!)
 # Which version to assign to snapshot builds (0.0.0 if built locally, 0.0.0-snapshot if on CI/CD)
@@ -50,8 +52,6 @@ BUILD_VM_SRC=$(BUILD_VM_SRC_$(ZARCH))
 
 UNAME_S := $(shell uname -s)
 HOSTARCH:=$(subst aarch64,arm64,$(subst x86_64,amd64,$(shell uname -m)))
-
-LINUXKIT_HOST_TARGET=$(shell uname -s | tr '[A-Z]' '[a-z]')/$(HOSTARCH)
 
 USER         = $(shell id -u -n)
 GROUP        = $(shell id -g -n)
@@ -87,6 +87,8 @@ ifneq ($(HOSTARCH),$(ZARCH))
 CROSS = 1
 $(warning "WARNING: We are assembling an $(ZARCH) image on $(HOSTARCH). Things may break.")
 endif
+
+LINUXKIT_PLATFORM_TARGET=$(shell uname -s | tr '[A-Z]' '[a-z]')/$(ZARCH)
 
 DOCKER_ARCH_TAG=$(ZARCH)
 
@@ -240,7 +242,7 @@ PARSE_PKGS=$(if $(strip $(EVE_HASH)),EVE_HASH=)$(EVE_HASH) DOCKER_ARCH_TAG=$(DOC
 LINUXKIT=$(BUILDTOOLS_BIN)/linuxkit
 LINUXKIT_VERSION=6312d580324ee5592dbd026610e1e7897a4aac6b
 LINUXKIT_SOURCE=https://github.com/linuxkit/linuxkit.git
-LINUXKIT_OPTS= $(if $(strip $(EVE_HASH)),--hash) $(EVE_HASH) $(if $(strip $(EVE_REL)),--release) $(EVE_REL) $(FORCE_BUILD)  --platforms $(LINUXKIT_HOST_TARGET)
+LINUXKIT_OPTS= $(if $(strip $(EVE_HASH)),--hash) $(EVE_HASH) $(if $(strip $(EVE_REL)),--release) $(EVE_REL) $(FORCE_BUILD)  --platforms $(LINUXKIT_PLATFORM_TARGET)
 LINUXKIT_PKG_TARGET=build
 RESCAN_DEPS=FORCE
 FORCE_BUILD=--force
@@ -552,9 +554,11 @@ eve: $(INSTALLER) $(EVE_ARTIFACTS) current $(RUNME) $(BUILD_YML) | $(BUILD_DIR)
 	$(QUIET): "$@: Begin: EVE_REL=$(EVE_REL), HV=$(HV), LINUXKIT_PKG_TARGET=$(LINUXKIT_PKG_TARGET)"
 	cp images/*.yml $|
 	$(PARSE_PKGS) pkg/eve/Dockerfile.in > $|/Dockerfile
-	$(LINUXKIT) $(DASH_V) pkg $(LINUXKIT_PKG_TARGET) --hash-path $(CURDIR) --hash $(ROOTFS_VERSION)-$(HV) $(if $(strip $(EVE_REL)),--release) $(EVE_REL)$(if $(strip $(EVE_REL)),-$(HV)) $(FORCE_BUILD) $|
+	$(LINUXKIT) $(DASH_V) pkg $(LINUXKIT_PKG_TARGET) --platforms $(LINUXKIT_PLATFORM_TARGET) --hash-path $(CURDIR) --hash $(ROOTFS_VERSION)-$(HV) $(if $(strip $(EVE_REL)),--release) $(EVE_REL)$(if $(strip $(EVE_REL)),-$(HV)) $(FORCE_BUILD) $|
+	$(LINUXKIT) cache export --outfile - lfedge/eve:$(ROOTFS_VERSION)-$(HV)-$(ZARCH)| docker load
 	$(QUIET)if [ -n "$(EVE_REL)" ] && [ $(HV) = $(HV_DEFAULT) ]; then \
-	   $(LINUXKIT) $(DASH_V) pkg $(LINUXKIT_PKG_TARGET) --hash-path $(CURDIR) --hash $(EVE_REL)-$(HV) --release $(EVE_REL) $(FORCE_BUILD) $| ;\
+	   $(LINUXKIT) $(DASH_V) pkg $(LINUXKIT_PKG_TARGET) --platforms $(LINUXKIT_PLATFORM_TARGET) --hash-path $(CURDIR) --hash $(EVE_REL)-$(HV) --release $(EVE_REL) $(FORCE_BUILD) $| ;\
+	   $(LINUXKIT) cache export --outfile - lfedge/eve:$(EVE_REL)-$(HV)-$(ZARCH)| docker load ;\
 	fi
 	$(QUIET): $@: Succeeded
 
@@ -703,8 +707,6 @@ help:
 	@echo "by forcing a particular architecture via adding ZARCH=[x86_64|aarch64]"
 	@echo "to the make's command line. You can also run in a cross- way since"
 	@echo "all the execution is done via qemu."
-	@echo
-	@echo "EVE will be built for the host platform $(LINUXKIT_HOST_TARGET), by default."
 	@echo
 	@echo "Commonly used maintenance and development targets:"
 	@echo "   build-vm       prepare a build VM for EVE in qcow2 format"
