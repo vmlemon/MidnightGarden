@@ -385,6 +385,12 @@ run-installer-net: $(BIOS_IMG) $(IPXE_IMG) $(DEVICETREE_DTB)
 run-live run: $(BIOS_IMG) $(DEVICETREE_DTB)
 	$(QEMU_SYSTEM) $(QEMU_OPTS) -drive file=$(CURRENT_IMG),format=$(IMG_FORMAT)
 
+get-freebsd-x86-image: wget $(FBSD13_RELURL_amd64) -O FreeBSD-13.0-RELEASE-amd64.qcow2.xz
+	xz -d FreeBSD-13.0-RELEASE-amd64.qcow2.xz
+
+get-haiku-x86-image: wget $(HAIKU_RELURL_amd64) -O haiku-r1beta2-x86_64-anyboot.zip
+	unzip haiku-r1beta2-x86_64-anyboot.zip
+
 run-target: $(BIOS_IMG) $(DEVICETREE_DTB)
 	$(QEMU_SYSTEM) $(QEMU_OPTS) -drive file=$(TARGET_IMG),format=$(IMG_FORMAT)
 
