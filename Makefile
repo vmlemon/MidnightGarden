@@ -385,11 +385,12 @@ run-installer-net: $(BIOS_IMG) $(IPXE_IMG) $(DEVICETREE_DTB)
 run-live run: $(BIOS_IMG) $(DEVICETREE_DTB)
 	$(QEMU_SYSTEM) $(QEMU_OPTS) -drive file=$(CURRENT_IMG),format=$(IMG_FORMAT)
 
-get-freebsd-x86-image: wget $(FBSD13_RELURL_amd64) -O FreeBSD-13.0-RELEASE-amd64.qcow2.xz
+get-freebsd-x86-image: wget $(FBSD13_RELURL_amd64) -O FreeBSD-13.0-RELEASE-amd64.qcow2.xz &&
 	xz -d FreeBSD-13.0-RELEASE-amd64.qcow2.xz
 
-get-haiku-x86-image: wget $(HAIKU_RELURL_amd64) -O haiku-r1beta2-x86_64-anyboot.zip
+get-haiku-x86-image: wget $(HAIKU_RELURL_amd64) -O haiku-r1beta2-x86_64-anyboot.zip &&
 	unzip haiku-r1beta2-x86_64-anyboot.zip
+	qemu-img convert -f raw haiku-r1beta2-hrev54154_111-x86_64-anyboot.iso -O qcow2 haiku-r1beta2.qcow
 
 run-target: $(BIOS_IMG) $(DEVICETREE_DTB)
 	$(QEMU_SYSTEM) $(QEMU_OPTS) -drive file=$(TARGET_IMG),format=$(IMG_FORMAT)
@@ -402,7 +403,7 @@ run-rootfs: $(BIOS_IMG) $(UBOOT_IMG) $(EFI_PART) $(DEVICETREE_DTB)
 run-grub: $(BIOS_IMG) $(UBOOT_IMG) $(EFI_PART) $(DEVICETREE_DTB)
 	[ -f $(EFI_PART)/BOOT/grub.cfg ] && mv $(EFI_PART)/BOOT/grub.cfg $(EFI_PART)/BOOT/grub.cfg.$(notdir $(shell mktemp))
 	$(QEMU_SYSTEM) $(QEMU_OPTS) -drive format=vvfat,id=uefi-disk,label=EVE,file=fat:rw:$(EFI_PART)/..
-	$(QUIET): $@: Succeeded
+		$(QUIET): $@: Succeeded
 
 run-compose: images/docker-compose.yml images/version.yml
 	docker-compose -f $< run storage-init sh -c 'rm -rf /run/* /config/* ; cp -Lr /conf/* /config/ ; echo IMGA > /run/eve.id'
