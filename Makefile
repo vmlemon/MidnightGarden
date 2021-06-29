@@ -219,6 +219,14 @@ ifneq ($(ALL_PROXY),)
 DOCKER_ALL_PROXY:=--build-arg all_proxy=$(ALL_PROXY)
 endif
 
+
+#get-haiku-x86-image: wget $(HAIKU_RELURL_amd64) -O haiku-r1beta2-x86_64-anyboot.zip
+	unzip haiku-r1beta2-x86_64-anyboot.zip
+	qemu-img convert -f raw haiku-r1beta2-hrev54154_111-x86_64-anyboot.iso -O qcow2 haiku-r1beta2.qcow
+
+#get-freebsd-x86-image: wget $(FBSD13_RELURL_amd64) -O FreeBSD-13.0-RELEASE-amd64.qcow2.xz
+	xz -d FreeBSD-13.0-RELEASE-amd64.qcow2.xz
+
 # use "make V=1" for verbose logging
 DASH_V :=
 QUIET := @
@@ -367,6 +375,7 @@ $(EFI_PART) $(BOOT_PART) $(INITRD_IMG) $(INSTALLER_IMG) $(KERNEL_IMG) $(IPXE_IMG
 # through the installer. It's the long road to live.img. Good for
 # testing.
 #
+
 run-installer-iso: $(BIOS_IMG) $(DEVICETREE_DTB)
 	qemu-img create -f ${IMG_FORMAT} $(TARGET_IMG) ${MEDIA_SIZE}M
 	$(QEMU_SYSTEM) -drive file=$(TARGET_IMG),format=$(IMG_FORMAT) -cdrom $(INSTALLER).iso -boot d $(QEMU_OPTS)
@@ -384,13 +393,6 @@ run-installer-net: $(BIOS_IMG) $(IPXE_IMG) $(DEVICETREE_DTB)
 # run MUST NOT change the current dir; it depends on the output being correct from a previous build
 run-live run: $(BIOS_IMG) $(DEVICETREE_DTB)
 	$(QEMU_SYSTEM) $(QEMU_OPTS) -drive file=$(CURRENT_IMG),format=$(IMG_FORMAT)
-
-get-freebsd-x86-image: wget $(FBSD13_RELURL_amd64) -O FreeBSD-13.0-RELEASE-amd64.qcow2.xz &&
-	xz -d FreeBSD-13.0-RELEASE-amd64.qcow2.xz
-
-get-haiku-x86-image: wget $(HAIKU_RELURL_amd64) -O haiku-r1beta2-x86_64-anyboot.zip &&
-	unzip haiku-r1beta2-x86_64-anyboot.zip
-	qemu-img convert -f raw haiku-r1beta2-hrev54154_111-x86_64-anyboot.iso -O qcow2 haiku-r1beta2.qcow
 
 run-target: $(BIOS_IMG) $(DEVICETREE_DTB)
 	$(QEMU_SYSTEM) $(QEMU_OPTS) -drive file=$(TARGET_IMG),format=$(IMG_FORMAT)
